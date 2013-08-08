@@ -251,7 +251,7 @@ repo manifest -o $WORKSPACE/archive/manifest.xml -r
 mv $TEMPSTASH/* .repo/local_manifests/ 2>/dev/null
 rmdir $TEMPSTASH
 
-rm -f $OUT/cm-*.zip*
+rm -f $OUT/*/*.apk
 
 UNAME=$(uname)
 
@@ -350,7 +350,7 @@ echo "$REPO_BRANCH-$CORE_BRANCH$RELEASE_MANIFEST" > .last_branch
 
 # envsetup.sh:mka = schedtool -B -n 1 -e ionice -n 1 make -j$(cat /proc/cpuinfo | grep "^processor" | wc -l) "$@"
 # Don't add -jXX. mka adds it automatically...
-time mka bacon recoveryzip recoveryimage #checkapi
+time mka Focal #checkapi
 check_result "Build failed."
 
 if [ $USE_CCACHE -eq 1 ]
@@ -386,22 +386,10 @@ then
 fi
 
 # /archive
-for f in $(ls $OUT/cm-*.zip*)
+for f in $(ls $OUT/*/*.apk)
 do
   ln $f $WORKSPACE/archive/$(basename $f)
 done
-if [ -f $OUT/utilties/update.zip ]
-then
-  cp $OUT/utilties/update.zip $WORKSPACE/archive/recovery.zip
-fi
-if [ -f $OUT/recovery.img ]
-then
-  cp $OUT/recovery.img $WORKSPACE/archive
-fi
-
-# archive the build.prop as well
-ZIP=$(ls $WORKSPACE/archive/cm-*.zip)
-unzip -p $ZIP system/build.prop > $WORKSPACE/archive/build.prop
 
 # CORE: save manifest used for build (saving revisions as current HEAD)
 rm -f .repo/local_manifests/dyn-$REPO_BRANCH.xml
@@ -418,24 +406,3 @@ rmdir $TEMPSTASH
 
 # chmod the files in case UMASK blocks permissions
 chmod -R ugo+r $WORKSPACE/archive
-
-CMCP=$(which cmcp)
-if [ ! -z "$CMCP" -a ! -z "$CM_RELEASE" ]
-then
-  MODVERSION=$(cat $WORKSPACE/archive/build.prop | grep ro.modversion | cut -d = -f 2)
-  if [ -z "$MODVERSION" ]
-  then
-    MODVERSION=$(cat $WORKSPACE/archive/build.prop | grep ro.cm.version | cut -d = -f 2)
-  fi
-  if [ -z "$MODVERSION" ]
-  then
-    echo "Unable to detect ro.modversion or ro.cm.version."
-    exit 1
-  fi
-  echo Archiving release to S3.
-  for f in $(ls $WORKSPACE/archive)
-  do
-    cmcp $WORKSPACE/archive/$f release/$MODVERSION/$f > /dev/null 2> /dev/null
-    check_result "Failure archiving $f"
-  done
-fi
