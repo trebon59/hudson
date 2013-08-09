@@ -386,7 +386,7 @@ then
 fi
 
 # /archive
-for f in $(ls $OUT/*/*.apk)
+for f in $(ls $OUT/system/app/Focal.apk)
 do
   ln $f $WORKSPACE/archive/$(basename $f)
 done
