@@ -385,8 +385,21 @@ then
   fi
 fi
 
+daytime=$(date +%Y"-"%m"-"%d"_"%H"-"%M)
+
+rm -f zip-creator/system
+
+mkdir -p zip-creator/
+
+cp $OUT/system zip-creator/system
+
+zipfile="focal-$OUT-$daytime.zip"
+cd zip-creator
+rm -f *.zip
+zip -r $zipfile *
+
 # /archive
-for f in $(ls $OUT/system/app/Focal.apk)
+for f in $(ls zip-creator/focal-$OUT-$daytime.zip)
 do
   ln $f $WORKSPACE/archive/$(basename $f)
 done
