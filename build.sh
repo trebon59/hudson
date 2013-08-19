@@ -389,9 +389,9 @@ daytime=$(date +%Y"-"%m"-"%d"_"%H"-"%M)
 
 rm -f zip-creator/system
 
-mkdir -p zip-creator/
+mkdir -p zip-creator/system
 
-cp $OUT/system zip-creator/system
+cp -r $OUT/system/ zip-creator/system/
 
 zipfile="focal-$OUT-$daytime.zip"
 cd zip-creator
