@@ -387,16 +387,15 @@ fi
 
 daytime=$(date +%Y"-"%m"-"%d"_"%H"-"%M)
 
-rm -f zip-creator/system
+rm -rf zip-creator
+mkdir zip-creator
 
-mkdir -p zip-creator/system
+cp -r $OUT/system/ zip-creator/
 
-cp -r $OUT/system/ zip-creator/system/
-
-zipfile="focal-$OUT-$daytime.zip"
+zipfile="focal-$LUNCH-$daytime.zip"
 cd zip-creator
 rm -f *.zip
-zip -r $zipfile *
+zip -rf $zipfile *
 
 # /archive
 for f in $(ls zip-creator/focal-$OUT-$daytime.zip)
