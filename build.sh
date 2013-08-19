@@ -395,10 +395,10 @@ cp -r $OUT/system/ zip-creator/
 zipfile="focal-$LUNCH-$daytime.zip"
 cd zip-creator
 rm -f *.zip
-zip -rf $zipfile *
+zip -r $zipfile system/
 
 # /archive
-for f in $(ls zip-creator/focal-$OUT-$daytime.zip)
+for f in $(ls zip-creator/$zipfile)
 do
   ln $f $WORKSPACE/archive/$(basename $f)
 done
