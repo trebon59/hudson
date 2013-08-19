@@ -398,7 +398,7 @@ rm -f *.zip
 zip -r $zipfile system/
 
 # /archive
-for f in $(ls zip-creator/$zipfile)
+for f in $(ls $WORKSPACE/cm-10.2/zip-creator/*.zip)
 do
   ln $f $WORKSPACE/archive/$(basename $f)
 done
