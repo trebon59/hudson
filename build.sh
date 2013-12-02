@@ -163,7 +163,7 @@ fi
 rm -rf .repo/manifests*
 rm -f .repo/local_manifests/dyn-*.xml
 rm -f .repo/local_manifest.xml
-repo init -u $SYNC_PROTO://github.com/androidarmv6/android.git -b $CORE_BRANCH $MANIFEST
+repo init -u ssh://git@bitbucket.com/faeamobile/android.git -b $CORE_BRANCH $MANIFEST
 check_result "repo init failed."
 
 if [ $USE_CCACHE -eq 1 ]

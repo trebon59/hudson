@@ -50,7 +50,7 @@ else:
 
 headers = {}
 headers['Content-Type'] = 'application/json'
-headers['User-Agent'] = 'androidarmv6 changelog builder'
+headers['User-Agent'] = 'faeamobile changelog builder'
 headers['Accept'] = '*/*'
 headers['Content-Length'] = "%d" % (len(logrequest))
 
