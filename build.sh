@@ -43,41 +43,9 @@ then
   exit 1
 fi
 
-if [ ! -z "$GERRIT_PROJECT" ]
+if [ -z "$PRODUCT" ]
 then
-  export RELEASE_TYPE=CM_EXPERIMENTAL
-  export CM_EXTRAVERSION="gerrit-$GERRIT_CHANGE_NUMBER-$GERRIT_PATCHSET_NUMBER"
-  export CLEAN=true
-  export GERRIT_XLATION_LINT=true
-  export VIRUS_SCAN=true
-
-  vendor_name=$(echo $GERRIT_PROJECT | grep -Po '.*(?<=android_device_)[^_]*' | sed -e s#androidarmv6/android_device_##g)
-  device_name=$(echo $GERRIT_PROJECT | grep '.*android_device_[^_]*_' | sed -e s#.*android_device_[^_]*_##g | sed s#androidarmv6/##g )
-
-  if [[ "$GERRIT_PROJECT" == *kernel* ]]
-  then
-    vendor_name=$(echo $GERRIT_PROJECT | grep -Po '.*(?<=android_kernel_)[^_]*' | sed -e s#androidarmv6/android_kernel_##g)
-    device_name=msm7x27-common
-  fi
-
-  if [[ "$GERRIT_PROJECT" == *vendor_google* ]]
-  then
-    export MINI_GAPPS=true
-  fi
-
-  # LDPI device (default)
-  LUNCH=cm_galaxy5-userdebug
-  if [ ! -z $vendor_name ] && [ ! -z $device_name ]
-  then
-    # Workaround for failing translation checks in common device repositories
-    LUNCH=$(echo cm_$device_name-userdebug@$vendor_name | sed -f $WORKSPACE/hudson/androidarmv6-shared-repo.map)
-  fi
-  export LUNCH=$LUNCH
-fi
-
-if [ -z "$LUNCH" ]
-then
-  echo LUNCH not specified
+  echo PRODUCT not specified
   exit 1
 fi
 
@@ -116,7 +84,7 @@ unset BUILD_NUMBER
 export PATH=~/bin:$PATH
 export BUILD_WITH_COLORS=0
 
-if [[ "$RELEASE_TYPE" == "CM_RELEASE" ]]
+if [[ "$USE_CCACHE" == "0" ]]
 then
   export USE_CCACHE=0
 else
@@ -219,7 +187,7 @@ then
 fi
 
 . build/envsetup.sh
-lunch $LUNCH
+source ./jdk6env.sh
 check_result "lunch failed."
 
 # save manifest used for build (saving revisions as current HEAD)
@@ -257,30 +225,6 @@ then
 fi
 
 
-if [ ! -z "$GERRIT_CHANGE_NUMBER" ]
-then
-  export GERRIT_CHANGES=$GERRIT_CHANGE_NUMBER
-fi
-
-if [ ! -z "$GERRIT_CHANGES" ]
-then
-  export CM_EXPERIMENTAL=true
-  IS_HTTP=$(echo $GERRIT_CHANGES | grep http)
-  if [ -z "$IS_HTTP" ]
-  then
-    python $WORKSPACE/hudson/repopick.py $GERRIT_CHANGES
-    check_result "gerrit picks failed."
-  else
-    python $WORKSPACE/hudson/repopick.py $(curl $GERRIT_CHANGES)
-    check_result "gerrit picks failed."
-  fi
-  if [ ! -z "$GERRIT_XLATION_LINT" ]
-  then
-    python $WORKSPACE/hudson/xlationlint.py $GERRIT_CHANGES
-    check_result "basic XML lint failed."
-  fi
-fi
-
 if [ $USE_CCACHE -eq 1 ]
 then
   if [ ! "$(ccache -s|grep -E 'max cache size'|awk '{print $4}')" = "64.0" ]
@@ -293,41 +237,10 @@ then
 fi
 
 
-rm -f $WORKSPACE/changecount
-WORKSPACE=$WORKSPACE LUNCH=$LUNCH bash $WORKSPACE/hudson/changes/buildlog.sh 2>&1
-if [ -f $WORKSPACE/changecount ]
-then
-  CHANGE_COUNT=$(cat $WORKSPACE/changecount)
-  rm -f $WORKSPACE/changecount
-  if [ $CHANGE_COUNT -eq "0" ]
-  then
-    echo "Zero changes since last build, aborting"
-    exit 1
-  fi
-fi
-
-LAST_CLEAN=0
-if [ -f .clean ]
-then
-  LAST_CLEAN=$(date -r .clean +%s)
-fi
-TIME_SINCE_LAST_CLEAN=$(expr $(date +%s) - $LAST_CLEAN)
-# convert this to hours
-TIME_SINCE_LAST_CLEAN=$(expr $TIME_SINCE_LAST_CLEAN / 60 / 60)
-if [ $TIME_SINCE_LAST_CLEAN -gt "24" -o $CLEAN = "true" ]
-then
-  echo "Cleaning!"
-  touch .clean
-  make clobber
-else
-  echo "Skipping clean: $TIME_SINCE_LAST_CLEAN hours since last clean."
-fi
-
-echo "$REPO_BRANCH-$CORE_BRANCH$RELEASE_MANIFEST" > .last_branch
-
 # envsetup.sh:mka = schedtool -B -n 1 -e ionice -n 1 make -j$(cat /proc/cpuinfo | grep "^processor" | wc -l) "$@"
 # Don't add -jXX. mka adds it automatically...
-time mka bacon recoveryzip recoveryimage #checkapi
+#time mka bacon recoveryzip recoveryimage #checkapi
+./release-ota.sh $PRODUCT $MODEM $SIM_TYPE $CUSTOMER $PROJECT_NAME
 check_result "Build failed."
 
 if [ $USE_CCACHE -eq 1 ]
